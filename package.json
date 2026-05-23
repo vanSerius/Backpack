@@ -1,0 +1,24 @@
+{
+  "name": "backpack-bayern",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Backpack-Battles-Klon mit deutscher Themenwelt (Bayern/Schwarzwald). Mobile-first, gehostet auf GitHub Pages.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "phaser": "^3.80.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4",
+    "vite": "^5.4.1",
+    "vitest": "^2.0.5",
+    "@types/node": "^22.5.0"
+  }
+}

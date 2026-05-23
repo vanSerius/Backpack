@@ -1,24 +1,49 @@
 import Phaser from 'phaser';
-import { DESIGN_WIDTH, COLORS, COLORS_HEX } from '../config/Layout';
+import { DESIGN_WIDTH, COLORS, COLORS_HEX, GRID_CELL } from '../config/Layout';
 import { makeButton } from '../ui/Button';
 import { gameState } from '../systems/state/GameState';
 import { getEnemy } from '../data/enemies';
 import { simulateBattle, type BattleResult } from '../systems/battle/BattleSimulator';
 import type { BattleEvent, Side } from '../types/Battle';
+import { makeItemSprite, type ItemSprite } from '../ui/ItemSprite';
 
-const COMBATANT_Y_PLAYER = 950;
-const COMBATANT_Y_ENEMY = 360;
+const ENEMY_Y = 240;
+const PLAYER_HP_Y = 480;
+const BATTLE_LOG_Y = 380;
+const BACKPACK_CELL = 72;
+const BACKPACK_TOP = 580;
+const HP_BAR_W = 460;
+const HP_BAR_H = 32;
+
+function projectileGlyphFor(itemId: string | undefined): { glyph: string; color: string; size: number } {
+  switch (itemId) {
+    case 'pfeil': return { glyph: '➤', color: '#e8c98a', size: 44 };
+    case 'bierkrug': return { glyph: '🍺', color: '#d4a13a', size: 38 };
+    case 'jagdhorn': return { glyph: '♪', color: '#b88340', size: 44 };
+    case 'kraeutertrank': return { glyph: '✨', color: '#7ad06a', size: 42 };
+    case 'kuckucksuhr': return { glyph: '⏰', color: '#d4a13a', size: 38 };
+    case 'brezel':
+    case 'wurst': return { glyph: '✨', color: '#7ad06a', size: 38 };
+    case 'gartenzwerg': return { glyph: '✦', color: '#a04050', size: 38 };
+    default: return { glyph: '✦', color: '#f3e6c9', size: 36 };
+  }
+}
 
 export class BattleScene extends Phaser.Scene {
   private result!: BattleResult;
   private playerHpBar!: { fill: Phaser.GameObjects.Graphics; text: Phaser.GameObjects.Text; hp: number; maxHp: number };
   private enemyHpBar!: { fill: Phaser.GameObjects.Graphics; text: Phaser.GameObjects.Text; hp: number; maxHp: number };
-  private playerSprite!: Phaser.GameObjects.Container;
   private enemySprite!: Phaser.GameObjects.Container;
   private logText!: Phaser.GameObjects.Text;
   private speed: 1 | 2 | 4 = 1;
   private eventIndex = 0;
   private finished = false;
+  private itemSprites: Map<string, ItemSprite> = new Map();
+  private itemSpritesByDef: Map<string, ItemSprite[]> = new Map();
+  private gridOriginX = 0;
+  private gridOriginY = 0;
+  private gridCols = 0;
+  private gridRows = 0;
 
   constructor() {
     super('Battle');
@@ -34,6 +59,10 @@ export class BattleScene extends Phaser.Scene {
     const enemyDef = getEnemy(enemyId);
 
     this.speed = gameState.meta.settings.battleSpeed;
+    this.eventIndex = 0;
+    this.finished = false;
+    this.itemSprites.clear();
+    this.itemSpritesByDef.clear();
 
     this.result = simulateBattle({
       seed: run.seed ^ run.stage,
@@ -45,86 +74,121 @@ export class BattleScene extends Phaser.Scene {
 
     const cx = DESIGN_WIDTH / 2;
 
-    this.add.text(cx, 60, `Runde ${run.stage + 1} · Kampf`, {
-      fontSize: '32px',
+    // header
+    this.add.text(cx, 48, `Runde ${run.stage + 1} · Kampf`, {
+      fontSize: '28px',
       color: COLORS_HEX.parchment,
       fontStyle: 'bold',
     }).setOrigin(0.5);
 
-    // enemy
-    this.enemySprite = this.makeCombatantSprite(cx, COMBATANT_Y_ENEMY, enemyDef.glyph, enemyDef.color);
-    this.add.text(cx, COMBATANT_Y_ENEMY + 110, enemyDef.name, {
-      fontSize: '28px',
-      color: COLORS_HEX.parchment,
-    }).setOrigin(0.5);
-    this.enemyHpBar = this.makeHpBar(cx, COMBATANT_Y_ENEMY + 160, enemyDef.maxHp, enemyDef.maxHp);
-
-    // separator
-    const sep = this.add.graphics();
-    sep.lineStyle(2, COLORS.woodLight, 0.5);
-    sep.lineBetween(80, 620, DESIGN_WIDTH - 80, 620);
-
-    // player
-    this.playerSprite = this.makeCombatantSprite(cx, COMBATANT_Y_PLAYER, run.hero.glyph, run.hero.color);
-    this.add.text(cx, COMBATANT_Y_PLAYER + 110, run.hero.name, {
-      fontSize: '28px',
-      color: COLORS_HEX.parchment,
-    }).setOrigin(0.5);
-    this.playerHpBar = this.makeHpBar(cx, COMBATANT_Y_PLAYER + 160, run.hp, run.maxHp);
-
-    // log
-    this.logText = this.add.text(cx, 720, '', {
-      fontSize: '22px',
-      color: COLORS_HEX.parchmentDim,
-      align: 'center',
-      wordWrap: { width: DESIGN_WIDTH - 80 },
-    }).setOrigin(0.5);
-
-    // speed toggle
-    makeButton(this, DESIGN_WIDTH - 100, 60, {
-      width: 140, height: 70, label: `${this.speed}×`, fontSize: 26,
+    makeButton(this, DESIGN_WIDTH - 80, 48, {
+      width: 110, height: 56, label: `${this.speed}×`, fontSize: 24,
       onClick: () => {
         this.speed = this.speed === 1 ? 2 : this.speed === 2 ? 4 : 1;
         gameState.meta.settings.battleSpeed = this.speed;
-        // trigger save via stats unchanged path
         this.scene.restart();
       },
     });
 
+    // enemy avatar
+    this.enemySprite = this.makeAvatar(cx, ENEMY_Y, enemyDef.glyph, enemyDef.color, 140);
+    this.add.text(cx, ENEMY_Y + 90, enemyDef.name, {
+      fontSize: '24px', color: COLORS_HEX.parchment, fontStyle: 'bold',
+    }).setOrigin(0.5);
+    this.enemyHpBar = this.makeHpBar(cx, ENEMY_Y + 130, enemyDef.maxHp, enemyDef.maxHp);
+
+    // battle log (small bar in middle)
+    this.logText = this.add.text(cx, BATTLE_LOG_Y, '', {
+      fontSize: '22px',
+      color: COLORS_HEX.parchmentDim,
+      align: 'center',
+    }).setOrigin(0.5);
+
+    // player HP + hero label
+    this.add.text(cx, PLAYER_HP_Y - 28, `${run.hero.glyph} ${run.hero.name}`, {
+      fontSize: '22px', color: COLORS_HEX.parchment,
+    }).setOrigin(0.5);
+    this.playerHpBar = this.makeHpBar(cx, PLAYER_HP_Y + 8, run.hp, run.maxHp);
+
+    // backpack grid
+    this.gridCols = run.backpack.width;
+    this.gridRows = run.backpack.height;
+    const gridPxW = this.gridCols * BACKPACK_CELL;
+    const gridPxH = this.gridRows * BACKPACK_CELL;
+    this.gridOriginX = (DESIGN_WIDTH - gridPxW) / 2;
+    this.gridOriginY = BACKPACK_TOP;
+
+    this.drawBackpackGrid();
+
+    // place item sprites scaled to BACKPACK_CELL
+    const scale = BACKPACK_CELL / GRID_CELL;
+    for (const placed of run.backpack.allItems()) {
+      const sprite = makeItemSprite(this, placed.def, placed.rotation);
+      sprite.container.setScale(scale);
+      sprite.container.setPosition(
+        this.gridOriginX + placed.x * BACKPACK_CELL,
+        this.gridOriginY + placed.y * BACKPACK_CELL,
+      );
+      this.itemSprites.set(placed.instanceId, sprite);
+      const list = this.itemSpritesByDef.get(placed.def.id) ?? [];
+      list.push(sprite);
+      this.itemSpritesByDef.set(placed.def.id, list);
+    }
+
+    // backpack label
+    this.add.text(cx, BACKPACK_TOP + gridPxH + 30, '🎒 Dein Backpack', {
+      fontSize: '20px', color: COLORS_HEX.parchmentDim,
+    }).setOrigin(0.5);
+
+    // start processing
     this.processNextEvent();
   }
 
-  private makeCombatantSprite(x: number, y: number, glyph: string, color: string): Phaser.GameObjects.Container {
+  private drawBackpackGrid(): void {
+    const g = this.add.graphics();
+    for (let y = 0; y < this.gridRows; y++) {
+      for (let x = 0; x < this.gridCols; x++) {
+        const px = this.gridOriginX + x * BACKPACK_CELL;
+        const py = this.gridOriginY + y * BACKPACK_CELL;
+        const fill = (x + y) % 2 === 0 ? COLORS.gridCell : COLORS.gridCellLight;
+        g.fillStyle(fill, 1);
+        g.fillRoundedRect(px + 2, py + 2, BACKPACK_CELL - 4, BACKPACK_CELL - 4, 5);
+      }
+    }
+    g.lineStyle(3, COLORS.wood, 1);
+    g.strokeRoundedRect(
+      this.gridOriginX - 6, this.gridOriginY - 6,
+      this.gridCols * BACKPACK_CELL + 12, this.gridRows * BACKPACK_CELL + 12, 12,
+    );
+  }
+
+  private makeAvatar(x: number, y: number, glyph: string, color: string, size: number): Phaser.GameObjects.Container {
     const c = this.add.container(x, y);
     const g = this.add.graphics();
     const colorNum = Phaser.Display.Color.HexStringToColor(color).color;
+    const half = size / 2;
     g.fillStyle(colorNum, 1);
-    g.fillRoundedRect(-90, -90, 180, 180, 24);
+    g.fillRoundedRect(-half, -half, size, size, 20);
     g.lineStyle(4, COLORS.woodLight, 1);
-    g.strokeRoundedRect(-90, -90, 180, 180, 24);
+    g.strokeRoundedRect(-half, -half, size, size, 20);
     c.add(g);
-    const t = this.add.text(0, 0, glyph, { fontSize: '120px' });
+    const t = this.add.text(0, 0, glyph, { fontSize: `${Math.floor(size * 0.7)}px` });
     t.setOrigin(0.5);
     c.add(t);
     return c;
   }
 
-  private makeHpBar(x: number, y: number, hp: number, maxHp: number): { fill: Phaser.GameObjects.Graphics; text: Phaser.GameObjects.Text; hp: number; maxHp: number } {
-    const w = 440;
-    const h = 36;
+  private makeHpBar(x: number, y: number, hp: number, maxHp: number) {
+    const w = HP_BAR_W; const h = HP_BAR_H;
     const bg = this.add.graphics();
     bg.fillStyle(COLORS.hpBg, 1);
     bg.fillRoundedRect(x - w / 2, y - h / 2, w, h, 8);
     bg.lineStyle(2, COLORS.woodLight, 1);
     bg.strokeRoundedRect(x - w / 2, y - h / 2, w, h, 8);
-
     const fill = this.add.graphics();
     const text = this.add.text(x, y, `${hp}/${maxHp}`, {
-      fontSize: '22px',
-      color: COLORS_HEX.parchment,
-      fontStyle: 'bold',
+      fontSize: '20px', color: COLORS_HEX.parchment, fontStyle: 'bold',
     }).setOrigin(0.5);
-
     const obj = { fill, text, hp, maxHp };
     this.redrawHpBar(obj, x, y, w, h);
     return obj;
@@ -139,11 +203,13 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private updateHp(side: Side, hp: number, maxHp: number): void {
-    const bar = side === 'player' ? this.playerHpBar : this.enemyHpBar;
-    bar.hp = hp;
-    bar.maxHp = maxHp;
-    const y = side === 'player' ? COMBATANT_Y_PLAYER + 160 : COMBATANT_Y_ENEMY + 160;
-    this.redrawHpBar(bar, DESIGN_WIDTH / 2, y, 440, 36);
+    if (side === 'player') {
+      this.playerHpBar.hp = hp; this.playerHpBar.maxHp = maxHp;
+      this.redrawHpBar(this.playerHpBar, DESIGN_WIDTH / 2, PLAYER_HP_Y + 8, HP_BAR_W, HP_BAR_H);
+    } else {
+      this.enemyHpBar.hp = hp; this.enemyHpBar.maxHp = maxHp;
+      this.redrawHpBar(this.enemyHpBar, DESIGN_WIDTH / 2, ENEMY_Y + 130, HP_BAR_W, HP_BAR_H);
+    }
   }
 
   private processNextEvent(): void {
@@ -160,42 +226,50 @@ export class BattleScene extends Phaser.Scene {
     const delay = this.baseDelay(ev) / this.speed;
     switch (ev.type) {
       case 'battle_start':
-        this.flashText('Kampf beginnt!');
+        this.flashLog('Kampf beginnt!');
         break;
       case 'turn_start':
-        this.logText.setText(`Runde ${ev.turn}`);
+        this.flashLog(`Runde ${ev.turn}`);
         break;
       case 'attack': {
-        this.attackAnimation(ev.source);
-        if (ev.blocked) {
-          this.floatText(ev.target, 'BLOCK', '#8aa0c0');
+        if (ev.source === 'player' && ev.sourceInstanceId) {
+          this.itemAttackAnimation(ev.sourceInstanceId, ev.target, ev.finalDamage, ev.blocked);
         } else {
-          this.floatText(ev.target, `-${ev.finalDamage}`, '#ff6a4a');
+          this.enemyAttackAnimation(ev.target, ev.finalDamage, ev.blocked);
         }
         break;
       }
       case 'heal':
-        if (ev.amount > 0) this.floatText(ev.target, `+${ev.amount}`, '#7ad06a');
+        if (ev.amount > 0) {
+          if (ev.sourceItem) this.glowItemByDef(ev.sourceItem);
+          this.floatText(ev.target, `+${ev.amount}`, '#7ad06a');
+        }
         break;
       case 'status':
-        if (ev.status === 'stun') this.floatText(ev.target, '💫 Stun', '#d4a13a');
+        if (ev.status === 'stun') {
+          if (ev.sourceItem) this.glowItemByDef(ev.sourceItem);
+          this.floatText(ev.target, '💫 Stun', '#d4a13a');
+        }
         break;
       case 'item_proc':
-        // ignore visually, logged in console for debug
+        if (ev.side === 'player' && ev.itemId) this.glowItemByDef(ev.itemId);
         break;
       case 'hp_change':
         this.updateHp(ev.target, ev.hp, ev.maxHp);
         break;
       case 'death':
         this.tweens.add({
-          targets: ev.target === 'player' ? this.playerSprite : this.enemySprite,
+          targets: ev.target === 'enemy' ? this.enemySprite : undefined,
           alpha: 0.3,
-          duration: 400,
+          duration: 400 / this.speed,
         });
+        if (ev.target === 'player') {
+          for (const sp of this.itemSprites.values()) {
+            this.tweens.add({ targets: sp.container, alpha: 0.4, duration: 400 / this.speed });
+          }
+        }
         break;
       case 'battle_end':
-        // handled in onBattleFinished
-        break;
       case 'turn_end':
         break;
     }
@@ -206,42 +280,146 @@ export class BattleScene extends Phaser.Scene {
     switch (ev.type) {
       case 'battle_start': return 700;
       case 'turn_start': return 400;
-      case 'attack': return 350;
-      case 'heal': return 250;
-      case 'status': return 300;
-      case 'hp_change': return 80;
-      case 'item_proc': return 150;
+      case 'attack': return 480;
+      case 'heal': return 320;
+      case 'status': return 280;
+      case 'hp_change': return 60;
+      case 'item_proc': return 80;
       case 'death': return 500;
-      case 'turn_end': return 100;
+      case 'turn_end': return 80;
       case 'battle_end': return 50;
     }
   }
 
-  private attackAnimation(source: Side): void {
-    const sprite = source === 'player' ? this.playerSprite : this.enemySprite;
-    const target = source === 'player' ? this.enemySprite : this.playerSprite;
-    const dx = (target.x - sprite.x) * 0.15;
-    const dy = (target.y - sprite.y) * 0.15;
+  private glowItem(sprite: ItemSprite): void {
     this.tweens.add({
-      targets: sprite,
-      x: sprite.x + dx,
-      y: sprite.y + dy,
-      duration: 100 / this.speed,
+      targets: sprite.container,
+      scale: { from: sprite.container.scale, to: sprite.container.scale * 1.18 },
+      duration: 90 / this.speed,
       yoyo: true,
-      ease: 'Cubic.easeOut',
+      ease: 'Quad.easeOut',
+    });
+  }
+
+  private glowItemByDef(defId: string): void {
+    const list = this.itemSpritesByDef.get(defId);
+    if (!list || list.length === 0) return;
+    this.glowItem(list[0]);
+  }
+
+  private itemCenter(sprite: ItemSprite): { x: number; y: number } {
+    const c = sprite.container;
+    const baseScale = c.scale;
+    const w = c.width * baseScale;
+    const h = c.height * baseScale;
+    return { x: c.x + w / 2, y: c.y + h / 2 };
+  }
+
+  private itemAttackAnimation(instanceId: string, target: Side, finalDamage: number, blocked: boolean): void {
+    const sprite = this.itemSprites.get(instanceId);
+    if (!sprite) {
+      this.enemyAttackAnimation(target, finalDamage, blocked);
+      return;
+    }
+    this.glowItem(sprite);
+    const from = this.itemCenter(sprite);
+    const targetObj = target === 'enemy' ? this.enemySprite : null;
+    const tx = targetObj ? targetObj.x : DESIGN_WIDTH / 2;
+    const ty = targetObj ? targetObj.y : PLAYER_HP_Y;
+
+    const proj = projectileGlyphFor(sprite.def.id);
+    const projectile = this.add.text(from.x, from.y, proj.glyph, {
+      fontSize: `${proj.size}px`,
+      color: proj.color,
+      fontStyle: 'bold',
+    }).setOrigin(0.5);
+    projectile.setDepth(50);
+
+    // rotate arrow-type projectiles to point toward target
+    if (proj.glyph === '➤') {
+      const angle = Phaser.Math.Angle.Between(from.x, from.y, tx, ty);
+      projectile.setRotation(angle);
+    }
+
+    this.tweens.add({
+      targets: projectile,
+      x: tx,
+      y: ty,
+      duration: 280 / this.speed,
+      ease: 'Cubic.easeIn',
+      onComplete: () => {
+        projectile.destroy();
+        if (blocked) {
+          this.floatText(target, 'BLOCK', '#8aa0c0');
+        } else {
+          this.floatText(target, `-${finalDamage}`, '#ff6a4a');
+          this.shake(targetObj);
+        }
+      },
+    });
+  }
+
+  private enemyAttackAnimation(target: Side, finalDamage: number, blocked: boolean): void {
+    this.tweens.add({
+      targets: this.enemySprite,
+      y: this.enemySprite.y + 20,
+      duration: 80 / this.speed,
+      yoyo: true,
+      ease: 'Quad.easeOut',
+    });
+
+    const from = { x: this.enemySprite.x, y: this.enemySprite.y };
+    const tx = DESIGN_WIDTH / 2;
+    const ty = PLAYER_HP_Y;
+
+    const projectile = this.add.text(from.x, from.y, '✦', {
+      fontSize: '36px',
+      color: '#ff8a4a',
+      fontStyle: 'bold',
+    }).setOrigin(0.5);
+    projectile.setDepth(50);
+
+    this.tweens.add({
+      targets: projectile,
+      x: tx,
+      y: ty,
+      duration: 280 / this.speed,
+      ease: 'Cubic.easeIn',
+      onComplete: () => {
+        projectile.destroy();
+        if (blocked) {
+          this.floatText(target, 'BLOCK', '#8aa0c0');
+        } else {
+          this.floatText(target, `-${finalDamage}`, '#ff6a4a');
+        }
+      },
+    });
+  }
+
+  private shake(obj: Phaser.GameObjects.Container | null): void {
+    if (!obj) return;
+    const baseX = obj.x;
+    this.tweens.add({
+      targets: obj,
+      x: baseX + 8,
+      duration: 50 / this.speed,
+      yoyo: true,
+      repeat: 1,
+      ease: 'Linear',
+      onComplete: () => obj.setX(baseX),
     });
   }
 
   private floatText(side: Side, text: string, color: string): void {
-    const baseY = side === 'player' ? COMBATANT_Y_PLAYER : COMBATANT_Y_ENEMY;
-    const t = this.add.text(DESIGN_WIDTH / 2, baseY, text, {
-      fontSize: '40px',
-      color,
-      fontStyle: 'bold',
+    const x = DESIGN_WIDTH / 2;
+    const y = side === 'enemy' ? ENEMY_Y - 20 : PLAYER_HP_Y - 20;
+    const t = this.add.text(x, y, text, {
+      fontSize: '38px', color, fontStyle: 'bold',
     }).setOrigin(0.5);
+    t.setDepth(60);
     this.tweens.add({
       targets: t,
-      y: baseY - 80,
+      y: y - 60,
       alpha: 0,
       duration: 700 / this.speed,
       ease: 'Cubic.easeOut',
@@ -249,7 +427,7 @@ export class BattleScene extends Phaser.Scene {
     });
   }
 
-  private flashText(msg: string): void {
+  private flashLog(msg: string): void {
     this.logText.setText(msg);
   }
 

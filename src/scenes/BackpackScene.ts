@@ -83,10 +83,15 @@ export class BackpackScene extends Phaser.Scene {
       }
     }
 
-    // player HP
-    this.add.text(cx, 280, `Du: ${run.hero.name}  ❤ ${run.hp}/${run.maxHp}`, {
+    // player HP + gold
+    this.add.text(cx - 100, 280, `Du: ${run.hero.name}  ❤ ${run.hp}/${run.maxHp}`, {
       fontSize: '24px',
       color: COLORS_HEX.parchment,
+    }).setOrigin(0.5);
+    this.add.text(cx + 200, 280, `💰 ${run.gold} G`, {
+      fontSize: '24px',
+      color: COLORS_HEX.accent,
+      fontStyle: 'bold',
     }).setOrigin(0.5);
 
     // grid
@@ -110,7 +115,12 @@ export class BackpackScene extends Phaser.Scene {
     // bottom buttons
     const btnY = this.gridOriginY + gridPxH + 80;
     makeButton(this, cx - 180, btnY, {
-      width: 300, height: 90, label: '← Menü', onClick: () => this.scene.start('MainMenu'),
+      width: 300, height: 90, label: '← Shop', onClick: () => {
+        if (!gameState.run) return;
+        gameState.run.pendingShop = true;
+        gameState.saveRun();
+        this.scene.start('Shop');
+      },
     });
     makeButton(this, cx + 180, btnY, {
       width: 300, height: 90, label: '⚔ Kämpfen', primary: true, onClick: () => this.scene.start('Battle'),

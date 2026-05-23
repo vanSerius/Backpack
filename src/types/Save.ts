@@ -29,7 +29,9 @@ export interface RunSaveV1 {
   heroId: string;
   hp: number;
   maxHp: number;
+  gold: number;
   stage: number;
+  pendingShop: boolean;
   backpack: {
     width: number;
     height: number;

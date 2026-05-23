@@ -59,6 +59,17 @@ export class ResultScene extends Phaser.Scene {
         fontSize: '32px',
         color: COLORS_HEX.parchment,
       }).setOrigin(0.5);
+
+      if (!runComplete) {
+        run.hp = Math.max(1, finalHp);
+        const reward = gameState.awardVictoryGold();
+        gameState.advanceStage();
+        this.add.text(cx, 510, `+${reward} Gold  (${run.gold} G gesamt)`, {
+          fontSize: '28px',
+          color: COLORS_HEX.accent,
+          fontStyle: 'bold',
+        }).setOrigin(0.5);
+      }
     }
 
     if (runComplete) {
@@ -80,12 +91,9 @@ export class ResultScene extends Phaser.Scene {
         },
       });
     } else if (playerWon) {
-      // proceed to next stage
-      run.hp = Math.max(1, finalHp);
-      gameState.advanceStage();
       makeButton(this, cx, btnY, {
-        width: 480, height: 100, label: 'Nächste Runde →', primary: true,
-        onClick: () => this.scene.start('Backpack'),
+        width: 480, height: 100, label: '🛒 Zum Shop →', primary: true,
+        onClick: () => this.scene.start('Shop'),
       });
     } else {
       // lost

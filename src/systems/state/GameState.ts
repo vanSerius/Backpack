@@ -12,8 +12,20 @@ export interface RunState {
   hero: HeroDef;
   hp: number;
   maxHp: number;
+  gold: number;
   stage: number;
+  pendingShop: boolean;
   backpack: BackpackGrid;
+}
+
+export const START_GOLD = 8;
+export const REROLL_COST = 1;
+export const SHOP_SLOTS = 4;
+
+export function rewardForStage(stage: number, heroId: string): number {
+  const base = 4 + stage * 2;
+  const bonus = heroId === 'brauer' ? 1 : 0;
+  return base + bonus;
 }
 
 class GameStateClass {
@@ -37,7 +49,9 @@ class GameStateClass {
       hero,
       hp: hero.maxHp,
       maxHp: hero.maxHp,
+      gold: START_GOLD,
       stage: 0,
+      pendingShop: true,
       backpack,
     };
     this.saveRun();
@@ -59,7 +73,9 @@ class GameStateClass {
         hero,
         hp: data.hp,
         maxHp: data.maxHp,
+        gold: data.gold ?? START_GOLD,
         stage: data.stage,
+        pendingShop: data.pendingShop ?? false,
         backpack,
       };
       return this.run;
@@ -79,22 +95,45 @@ class GameStateClass {
       heroId: r.hero.id,
       hp: r.hp,
       maxHp: r.maxHp,
+      gold: r.gold,
       stage: r.stage,
+      pendingShop: r.pendingShop,
       backpack: r.backpack.serialize(),
     };
     SaveManager.saveRun(data);
   }
 
+  awardVictoryGold(): number {
+    if (!this.run) return 0;
+    const amount = rewardForStage(this.run.stage, this.run.hero.id);
+    this.run.gold += amount;
+    this.saveRun();
+    return amount;
+  }
+
+  spendGold(amount: number): boolean {
+    if (!this.run || this.run.gold < amount) return false;
+    this.run.gold -= amount;
+    this.saveRun();
+    return true;
+  }
+
   advanceStage(): void {
     if (!this.run) return;
     this.run.stage++;
+    this.run.pendingShop = true;
     this.meta.stats.enemiesDefeated++;
     if (this.run.stage > STAGE_ORDER.length - 1) {
-      // last enemy was boss
       this.meta.stats.bossesDefeated++;
     }
     this.saveRun();
     SaveManager.saveMeta(this.meta);
+  }
+
+  clearPendingShop(): void {
+    if (!this.run) return;
+    this.run.pendingShop = false;
+    this.saveRun();
   }
 
   endRun(won: boolean): void {

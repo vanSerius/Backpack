@@ -142,6 +142,7 @@ function applyDamage(
   rawDamage: number,
   pierce: boolean,
   sourceItem: string | undefined,
+  sourceInstanceId: string | undefined,
   t: number,
   log: BattleEvent[],
 ): void {
@@ -153,6 +154,7 @@ function applyDamage(
       t,
       source: attacker.side,
       sourceItem,
+      sourceInstanceId,
       target: defender.side,
       rawDamage,
       finalDamage: 0,
@@ -170,6 +172,7 @@ function applyDamage(
     t,
     source: attacker.side,
     sourceItem,
+    sourceInstanceId,
     target: defender.side,
     rawDamage,
     finalDamage,
@@ -261,7 +264,7 @@ function fireTriggers(
           self.shieldHits = Math.max(self.shieldHits, eff.amount ?? 1);
           break;
         case 'damage':
-          applyDamage(self, other, eff.amount ?? 0, false, p.itemId, t, log);
+          applyDamage(self, other, eff.amount ?? 0, false, p.itemId, undefined, t, log);
           break;
         default:
           break;
@@ -328,13 +331,13 @@ export function simulateBattle(input: BattleInput): BattleResult {
       if (c.stunTurns > 0) continue;
       w.cdRemaining--;
       if (w.cdRemaining > 0) continue;
-      // reset cooldown
       w.cdRemaining = w.cooldown;
       const dmg = w.attack;
-      applyDamage(c, o, dmg, w.pierce, w.itemId === c.side ? undefined : w.itemId, t++, log);
-      // stun-on-attack
+      const srcItem = c.side === 'player' ? w.itemId : undefined;
+      const srcInstance = c.side === 'player' ? w.instanceId : undefined;
+      applyDamage(c, o, dmg, w.pierce, srcItem, srcInstance, t++, log);
       if (w.stunChance > 0 && c.rng.chance(w.stunChance)) {
-        applyStun(o, w.stunAmount, w.itemId, t++, log);
+        applyStun(o, w.stunAmount, srcItem, t++, log);
       }
     }
 

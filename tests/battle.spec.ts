@@ -91,6 +91,47 @@ describe('BattleSimulator', () => {
     expect(result.winner).toBe('player');
   });
 
+  it('player attacks carry sourceInstanceId for animation lookup', () => {
+    const grid = makeBackpack(['bierkrug', 'pfeil']);
+    const result = simulateBattle({
+      seed: 5,
+      playerItems: grid.allItems(),
+      playerHp: 40,
+      playerMaxHp: 40,
+      enemy: getEnemy('wildschwein'),
+    });
+    const playerAttacks = result.events.filter(
+      (e) => e.type === 'attack' && e.source === 'player',
+    );
+    expect(playerAttacks.length).toBeGreaterThan(0);
+    for (const ev of playerAttacks) {
+      if (ev.type === 'attack') {
+        expect(ev.sourceInstanceId).toBeTruthy();
+        expect(ev.sourceItem).toBeTruthy();
+      }
+    }
+  });
+
+  it('enemy attacks have no sourceInstanceId', () => {
+    const grid = makeBackpack(['brezel']);
+    const result = simulateBattle({
+      seed: 5,
+      playerItems: grid.allItems(),
+      playerHp: 40,
+      playerMaxHp: 40,
+      enemy: getEnemy('wildschwein'),
+    });
+    const enemyAttacks = result.events.filter(
+      (e) => e.type === 'attack' && e.source === 'enemy',
+    );
+    expect(enemyAttacks.length).toBeGreaterThan(0);
+    for (const ev of enemyAttacks) {
+      if (ev.type === 'attack') {
+        expect(ev.sourceInstanceId).toBeUndefined();
+      }
+    }
+  });
+
   it('pierce ignores armor', () => {
     const grid = makeBackpack(['pfeil']);
     const result = simulateBattle({

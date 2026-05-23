@@ -83,7 +83,7 @@ export class HeroSelectScene extends Phaser.Scene {
         c.setInteractive(hit, Phaser.Geom.Rectangle.Contains);
         c.on('pointerup', () => {
           gameState.startRun(hero.id);
-          this.scene.start('Backpack');
+          this.scene.start('Shop');
         });
       }
     });

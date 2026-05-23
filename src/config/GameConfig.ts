@@ -5,6 +5,7 @@ import { PreloadScene } from '../scenes/PreloadScene';
 import { MainMenuScene } from '../scenes/MainMenuScene';
 import { HeroSelectScene } from '../scenes/HeroSelectScene';
 import { BackpackScene } from '../scenes/BackpackScene';
+import { ShopScene } from '../scenes/ShopScene';
 import { BattleScene } from '../scenes/BattleScene';
 import { ResultScene } from '../scenes/ResultScene';
 
@@ -25,5 +26,5 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
   input: {
     activePointers: 2,
   },
-  scene: [BootScene, PreloadScene, MainMenuScene, HeroSelectScene, BackpackScene, BattleScene, ResultScene],
+  scene: [BootScene, PreloadScene, MainMenuScene, HeroSelectScene, ShopScene, BackpackScene, BattleScene, ResultScene],
 };

@@ -31,7 +31,8 @@ export class MainMenuScene extends Phaser.Scene {
     });
     tagline.setOrigin(0.5);
 
-    const hasResume = !!gameState.resumeRun();
+    const resumedRun = gameState.resumeRun();
+    const hasResume = !!resumedRun;
 
     let y = 620;
     const gap = 130;
@@ -42,8 +43,8 @@ export class MainMenuScene extends Phaser.Scene {
       label: hasResume ? 'Run fortsetzen' : 'Neuer Run',
       primary: true,
       onClick: () => {
-        if (hasResume) {
-          this.scene.start('Backpack');
+        if (hasResume && resumedRun) {
+          this.scene.start(resumedRun.pendingShop ? 'Shop' : 'Backpack');
         } else {
           this.scene.start('HeroSelect');
         }

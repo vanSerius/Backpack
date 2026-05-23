@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Rucksack Rumble</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- SCREENS -->
+<div id="screen-main-menu" class="screen active">
+  <div class="menu-logo">
+    <div class="logo-icon">🎒</div>
+    <h1>Rucksack<br><span>Rumble</span></h1>
+    <p class="subtitle">Auto-Battle Inventory Tactics</p>
+  </div>
+  <div class="menu-buttons">
+    <button class="btn btn-primary" onclick="Game.startNewGame()">Neues Spiel</button>
+    <button class="btn btn-secondary" onclick="Game.showHowToPlay()">Wie spielt man?</button>
+  </div>
+  <div class="menu-footer">Runde 1 von 8 · Besiege alle Gegner!</div>
+</div>
+
+<div id="screen-how-to-play" class="screen">
+  <div class="htp-content">
+    <h2>Wie spielt man?</h2>
+    <div class="htp-steps">
+      <div class="htp-step"><span class="step-num">1</span><div><strong>Platziere Items</strong><br>Ziehe Items per Drag &amp; Drop in deinen Rucksack.</div></div>
+      <div class="htp-step"><span class="step-num">2</span><div><strong>Synergien nutzen</strong><br>Gleiche Elemente nebeneinander geben Boni!</div></div>
+      <div class="htp-step"><span class="step-num">3</span><div><strong>Kämpfe Auto-Battle</strong><br>Items aktivieren sich automatisch. Mehr HP = Sieg.</div></div>
+      <div class="htp-step"><span class="step-num">4</span><div><strong>Shoppe zwischen Runden</strong><br>Kaufe neue Items, kombiniere sie, werde stärker.</div></div>
+    </div>
+    <div class="element-guide">
+      <h3>Elemente</h3>
+      <div class="el-row"><span class="el fire">🔥 Feuer</span> — Bonus-Schaden auf benachbarte Feuer-Items</div>
+      <div class="el-row"><span class="el ice">❄️ Eis</span> — Verlangsamt Gegner (weniger Angriffe)</div>
+      <div class="el-row"><span class="el nature">🌿 Natur</span> — Heilt HP nach jedem Angriff</div>
+      <div class="el-row"><span class="el shadow">💀 Schatten</span> — Lebensraub, stiehlt Gegner-HP</div>
+    </div>
+    <button class="btn btn-primary" onclick="Game.showScreen('main-menu')">Zurück</button>
+  </div>
+</div>
+
+<div id="screen-shop" class="screen">
+  <div class="shop-header">
+    <div class="round-info">
+      <span class="round-label">Runde</span>
+      <span id="shop-round-num">1</span>
+      <span class="round-label">/ 8</span>
+    </div>
+    <div class="gold-display">🪙 <span id="shop-gold">10</span></div>
+  </div>
+  <div class="shop-area">
+    <h3>Shop <button class="btn-reroll" id="btn-reroll" onclick="Shop.reroll()">🔄 Reroll <span id="reroll-cost">(2🪙)</span></button></h3>
+    <div id="shop-items" class="shop-items-grid"></div>
+  </div>
+  <div class="pack-area">
+    <div class="pack-header">
+      <h3>Dein Rucksack</h3>
+      <div class="pack-stats">
+        <span id="pack-atk-display">⚔️ 0</span>
+        <span id="pack-hp-display">❤️ 0</span>
+      </div>
+    </div>
+    <div id="backpack-grid" class="backpack-grid"></div>
+    <div id="item-tooltip" class="item-tooltip hidden"></div>
+  </div>
+  <div class="shop-footer">
+    <button class="btn btn-danger" onclick="Shop.sellSelected()">🗑️ Verkaufen</button>
+    <button class="btn btn-primary" onclick="Game.startBattle()">⚔️ Kämpfen!</button>
+  </div>
+</div>
+
+<div id="screen-battle" class="screen">
+  <div class="battle-header">
+    <span id="battle-round-label">Runde 1 · Gegner 1</span>
+    <span id="battle-enemy-name" class="enemy-name"></span>
+  </div>
+  <div class="battle-arena">
+    <div class="combatant player-side">
+      <div class="combatant-label">Du</div>
+      <div class="hp-bar-wrap">
+        <div class="hp-bar" id="player-hp-bar"></div>
+        <span class="hp-text" id="player-hp-text"></span>
+      </div>
+      <div id="player-battle-pack" class="battle-pack"></div>
+    </div>
+    <div class="vs-divider">VS</div>
+    <div class="combatant enemy-side">
+      <div class="combatant-label" id="enemy-name-label">Gegner</div>
+      <div class="hp-bar-wrap">
+        <div class="hp-bar enemy" id="enemy-hp-bar"></div>
+        <span class="hp-text" id="enemy-hp-text"></span>
+      </div>
+      <div id="enemy-battle-pack" class="battle-pack"></div>
+    </div>
+  </div>
+  <div id="battle-log" class="battle-log"></div>
+  <div class="battle-footer">
+    <button class="btn btn-primary" id="btn-battle-action" onclick="Battle.step()">▶ Start</button>
+    <button class="btn btn-secondary" id="btn-battle-auto" onclick="Battle.toggleAuto()">⚡ Auto</button>
+  </div>
+</div>
+
+<div id="screen-result" class="screen">
+  <div class="result-content">
+    <div id="result-icon" class="result-icon"></div>
+    <h2 id="result-title"></h2>
+    <p id="result-message"></p>
+    <div id="result-rewards" class="result-rewards"></div>
+    <button class="btn btn-primary" id="btn-result-continue" onclick="Game.afterBattle()"></button>
+  </div>
+</div>
+
+<div id="screen-game-over" class="screen">
+  <div class="result-content">
+    <div class="result-icon">💀</div>
+    <h2>Game Over</h2>
+    <p id="go-message"></p>
+    <button class="btn btn-primary" onclick="Game.startNewGame()">Nochmal spielen</button>
+  </div>
+</div>
+
+<div id="screen-victory" class="screen">
+  <div class="result-content">
+    <div class="result-icon">🏆</div>
+    <h2>Sieg!</h2>
+    <p>Du hast alle 8 Gegner besiegt! Du bist der Champion!</p>
+    <button class="btn btn-primary" onclick="Game.startNewGame()">Nochmal spielen</button>
+  </div>
+</div>
+
+<!-- Item drag ghost -->
+<div id="drag-ghost" class="drag-ghost hidden"></div>
+
+<script src="js/items.js"></script>
+<script src="js/enemies.js"></script>
+<script src="js/pack.js"></script>
+<script src="js/shop.js"></script>
+<script src="js/battle.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>

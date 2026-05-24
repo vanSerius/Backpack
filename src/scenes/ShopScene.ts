@@ -4,7 +4,7 @@ import { makeButton } from '../ui/Button';
 import { gameState, REROLL_COST, SHOP_SLOTS } from '../systems/state/GameState';
 import { ITEMS } from '../data/items';
 import { Rng } from '../systems/rng/Rng';
-import { drawItemGraphic } from '../ui/ItemSprite';
+import { makeItemSprite } from '../ui/ItemSprite';
 import type { ItemDef } from '../types/Item';
 
 interface ShopSlot {
@@ -143,20 +143,13 @@ export class ShopScene extends Phaser.Scene {
   }
 
   private renderSlotItem(slot: ShopSlot, def: ItemDef): void {
-    const itemContainer = this.add.container(-90, 0);
-    const g = this.add.graphics();
-    drawItemGraphic(g, def, 0);
+    const sprite = makeItemSprite(this, def, 0);
     const scale = SHOP_PREVIEW_CELL / GRID_CELL;
-    g.setScale(scale);
-    g.setPosition(-(def.shape.width * GRID_CELL * scale) / 2, -(def.shape.height * GRID_CELL * scale) / 2);
-    itemContainer.add(g);
-    const glyph = this.add.text(0, 0, def.glyph, { fontSize: '40px' }).setOrigin(0.5);
-    glyph.setPosition(
-      g.x + (def.shape.width * GRID_CELL * scale) / 2,
-      g.y + (def.shape.height * GRID_CELL * scale) / 2,
-    );
-    itemContainer.add(glyph);
-    slot.container.add(itemContainer);
+    sprite.container.setScale(scale);
+    const w = def.shape.width * GRID_CELL * scale;
+    const h = def.shape.height * GRID_CELL * scale;
+    sprite.container.setPosition(-90 - w / 2, -h / 2);
+    slot.container.add(sprite.container);
 
     const name = this.add.text(20, -30, def.name, {
       fontSize: '22px',

@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { DESIGN_WIDTH, DESIGN_HEIGHT, COLORS, COLORS_HEX } from '../config/Layout';
+import { ITEMS } from '../data/items';
 
 export class PreloadScene extends Phaser.Scene {
   constructor() {
@@ -33,6 +34,21 @@ export class PreloadScene extends Phaser.Scene {
       fill.clear();
       fill.fillStyle(COLORS.accent, 1);
       fill.fillRoundedRect(cx - barW / 2 + 2, cy + 32, (barW - 4) * p, barH - 4, 4);
+    });
+
+    // load item sprites at high resolution; Phaser rasterizes SVG to the requested size
+    const dpr = Math.min(window.devicePixelRatio ?? 1, 2);
+    const SPRITE_PX = Math.round(72 * dpr);
+    for (const def of ITEMS) {
+      this.load.svg(`item:${def.id}`, `assets/items/${def.id}.svg`, {
+        width: SPRITE_PX,
+        height: SPRITE_PX,
+      });
+    }
+
+    // swallow missing-file errors gracefully -> falls back to emoji glyph in ItemSprite
+    this.load.on('loaderror', (file: Phaser.Loader.File) => {
+      console.warn('Konnte Asset nicht laden:', file.key, file.url);
     });
   }
 

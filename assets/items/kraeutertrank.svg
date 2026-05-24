@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <!-- cork -->
+  <rect x="52" y="14" width="24" height="14" fill="#a06030" stroke="#3a1f08" stroke-width="3"/>
+  <!-- neck -->
+  <rect x="56" y="28" width="16" height="16" fill="#5a8a78" stroke="#1a3030" stroke-width="3"/>
+  <!-- bottle body -->
+  <path d="M 36 50 Q 36 44 50 44 L 78 44 Q 92 44 92 50 L 92 100 Q 92 116 64 116 Q 36 116 36 100 Z" fill="#3a7a5a" stroke="#1a3030" stroke-width="4" stroke-linejoin="round"/>
+  <!-- liquid surface -->
+  <path d="M 42 52 Q 50 48 64 50 Q 78 52 86 52" fill="none" stroke="#7ad06a" stroke-width="3" stroke-linecap="round"/>
+  <!-- bubbles -->
+  <circle cx="54" cy="80" r="4" fill="#a0e890" opacity="0.7"/>
+  <circle cx="74" cy="92" r="3" fill="#a0e890" opacity="0.7"/>
+  <circle cx="60" cy="100" r="2" fill="#a0e890" opacity="0.7"/>
+  <!-- highlight -->
+  <rect x="42" y="58" width="4" height="46" fill="#a0e890" opacity="0.5" rx="2"/>
+  <!-- leaf -->
+  <path d="M 78 26 Q 96 14 96 26 Q 96 36 86 32 Q 80 36 78 32 Z" fill="#3a8a3a" stroke="#1a3a14" stroke-width="2" stroke-linejoin="round"/>
+</svg>

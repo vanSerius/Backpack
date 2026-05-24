@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <!-- shield body (heater style) -->
+  <path d="M 20 24 L 108 24 L 108 64 Q 108 100 64 118 Q 20 100 20 64 Z" fill="#8a5028" stroke="#2a1004" stroke-width="5" stroke-linejoin="round"/>
+  <!-- wood grain -->
+  <path d="M 30 36 Q 64 32 98 36" fill="none" stroke="#5a2810" stroke-width="2"/>
+  <path d="M 30 52 Q 64 48 98 52" fill="none" stroke="#5a2810" stroke-width="2"/>
+  <path d="M 32 72 Q 64 68 96 72" fill="none" stroke="#5a2810" stroke-width="2"/>
+  <path d="M 38 92 Q 64 88 90 92" fill="none" stroke="#5a2810" stroke-width="2"/>
+  <!-- iron rim top -->
+  <path d="M 20 24 L 108 24 L 108 32 L 20 32 Z" fill="#606878" stroke="#2a3038" stroke-width="3"/>
+  <!-- iron boss (center) -->
+  <circle cx="64" cy="62" r="14" fill="#808898" stroke="#2a3038" stroke-width="4"/>
+  <circle cx="64" cy="62" r="6" fill="#a0a8b8"/>
+  <!-- rivets -->
+  <circle cx="30" cy="28" r="3" fill="#404858" stroke="#1a2028" stroke-width="1"/>
+  <circle cx="98" cy="28" r="3" fill="#404858" stroke="#1a2028" stroke-width="1"/>
+  <circle cx="64" cy="28" r="3" fill="#404858" stroke="#1a2028" stroke-width="1"/>
+</svg>

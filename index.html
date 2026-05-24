@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+    <meta name="theme-color" content="#1a1410" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <title>Backpack Bayern</title>
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        background: #0f0a06;
+        overflow: hidden;
+        overscroll-behavior: none;
+        -webkit-tap-highlight-color: transparent;
+        -webkit-user-select: none;
+        user-select: none;
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      }
+      #game-container {
+        width: 100vw;
+        height: 100vh;
+        padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+        box-sizing: border-box;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      #game-container canvas {
+        display: block;
+        touch-action: none;
+      }
+      #rotate-overlay {
+        position: fixed;
+        inset: 0;
+        background: #0f0a06;
+        color: #f3e6c9;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 2rem;
+        font-size: 1.2rem;
+        z-index: 9999;
+      }
+      @media (orientation: landscape) and (max-height: 500px) {
+        #rotate-overlay { display: flex; }
+      }
+    </style>
+    <script type="module" crossorigin src="/Backpack/assets/index-0HQAxxlh.js"></script>
+  </head>
+  <body>
+    <div id="game-container"></div>
+    <div id="rotate-overlay">Bitte halte dein Handy hochkant.</div>
+  </body>
+</html>

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <!-- main body (curved horn) -->
+  <path d="M 20 86 Q 24 60 50 56 Q 76 52 90 70 Q 104 88 96 102 L 88 96 Q 92 86 84 78 Q 74 68 56 72 Q 36 76 36 96 Z" fill="#c89238" stroke="#3a2008" stroke-width="4" stroke-linejoin="round"/>
+  <!-- bell flare -->
+  <path d="M 96 102 L 116 92 L 112 112 L 88 108 Z" fill="#a07820" stroke="#3a2008" stroke-width="4" stroke-linejoin="round"/>
+  <!-- mouthpiece -->
+  <circle cx="20" cy="86" r="8" fill="#3a2008" stroke="#1a1004" stroke-width="2"/>
+  <!-- highlights -->
+  <path d="M 32 74 Q 50 64 70 64" fill="none" stroke="#f0d080" stroke-width="3" stroke-linecap="round"/>
+  <!-- decoration ribbon -->
+  <path d="M 56 56 Q 60 44 52 36 Q 56 30 64 36" fill="none" stroke="#a02828" stroke-width="3" stroke-linecap="round"/>
+</svg>
